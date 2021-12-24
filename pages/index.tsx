@@ -1,33 +1,62 @@
-import type { NextPage } from 'next';
-import Head from 'next/head';
-import Image from 'next/image';
-import { Button, Pane, Text, majorScale } from 'evergreen-ui';
+import Auth from '../components/Auth'
+import Account from '../components/Account'
+import React, { useState, useEffect, useContext, createContext } from 'react'
+import { supabase } from '../lib/supabaseClient'
+import { AuthSession } from '@supabase/supabase-js'
+import { Profile } from '../lib/constants'
+import ProfileList from '../components/ProfileList'
+import { Pane, majorScale, Link as EvergreenLink, Button, Text, Heading, Alert, TextInput } from 'evergreen-ui'
 
-const Home: NextPage = () => {
+import Layout from '../components/document/Layout'
+import { row } from 'glamor/ous'
+
+const IndexPage = () => {
+  const [session, setSession] = useState<AuthSession | null>(null)
+  const [profiles, setProfiles] = useState<Profile[]>([])
+
+  useEffect(() => {
+    setSession(supabase.auth.session())
+
+    supabase.auth.onAuthStateChange((_event: string, session: AuthSession | null) => {
+      setSession(session)
+    })
+  }, [])
+
+  useEffect(() => {
+    getPublicProfiles()
+  }, [])
+
+  async function getPublicProfiles() {
+    try {
+      const { data, error } = await supabase
+        .from<Profile>('profiles')
+        .select('id, username, avatar_url, website, updated_at')
+        .order('updated_at', { ascending: false })
+
+      if (error || !data) {
+        throw error || new Error('No data')
+      }
+      console.log('Public profiles:', data)
+      setProfiles(data)
+    } catch (error) {
+      console.log('error', error.message)
+    }
+  }
   return (
-    <>
-      <Head>
-        <title>Jesse Tran</title>
-        <meta
-          name='description'
-          content='Ứng dụng quản lý tài chính của Jesse Tran.'
-        />
-        <link rel='icon' href='/favicon.ico' />
-      </Head>
-
+    <Layout title="Trang chủ">
       <Pane
-        display='flex'
-        alignItems='center'
-        justifyContent='center'
-        width='100%'
-        height='100vh'
-        marginX={majorScale(2)}
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
+        width="100%"
+        height="100%"
+        position="relative"
       >
-        <Button>Click me!</Button>
-        <Text>This is a clickable Button</Text>
+        <Pane display="flex" justifyContent="center" alignItems="center" height="100%" position="relative"></Pane>
       </Pane>
-    </>
-  );
-};
+    </Layout>
+  )
+}
 
-export default Home;
+export default IndexPage
