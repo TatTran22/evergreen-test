@@ -8,7 +8,6 @@ import ProfileList from '../components/ProfileList'
 import { Pane, Tablist, Button, Text, Heading, TextInput, Spinner, Tab, Paragraph, majorScale } from 'evergreen-ui'
 
 import Layout from '../components/document/Layout'
-import { row } from 'glamor/ous'
 
 const IndexPage = () => {
   const [session, setSession] = useState<AuthSession | null>(null)
@@ -32,8 +31,8 @@ const IndexPage = () => {
     try {
       const { data, error } = await supabase
         .from<Profile>('profiles')
-        .select('id, username, avatar_url, website, updated_at, active_status, last_active')
-        .order('updated_at', { ascending: false })
+        .select('id, username, first_name, last_name, avatar_url, website, updated_at, active_status, last_active')
+        .order('last_active', { ascending: false })
 
       if (error || !data) {
         throw error || new Error('No data')
@@ -97,43 +96,6 @@ const IndexPage = () => {
           </Pane>
         </Pane>
       )}
-      {/* <Pane
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        justifyContent="center"
-        width="100%"
-        height="100%"
-        position="relative"
-      >
-        <Pane display="flex" justifyContent="center" alignItems="center" height="100%" position="relative">
-          {!session ? (
-            <Auth />
-          ) : (
-            <Pane
-              maxWidth="500px"
-              minHeight="520px"
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              justifyContent="center"
-            >
-              <Pane display="flex" flexDirection="column" alignItems="center">
-                <Heading is="h1" marginBottom="2rem" fontSize="2rem">
-                  Thông tin tài khoản
-                </Heading>
-                <Account key={session.user.id} session={session} />
-              </Pane>
-              <Pane>
-                <Heading is="h1" marginBottom="2rem" fontSize="2rem">
-                  Public Profiles
-                </Heading>
-                <ProfileList profiles={profiles} />
-              </Pane>
-            </Pane>
-          )}
-        </Pane>
-      </Pane> */}
     </Layout>
   )
 }

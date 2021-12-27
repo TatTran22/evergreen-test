@@ -1,28 +1,45 @@
-import { useState, useEffect, ChangeEvent } from 'react'
+import { useState, useEffect, ChangeEvent, useRef } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import UploadButton from '../components/UploadButton'
 import UserAvatar from './UserAvatar'
 import { AuthSession } from '@supabase/supabase-js'
 import { DEFAULT_AVATARS_BUCKET, Profile } from '../lib/constants'
-import {
-  Pane,
-  majorScale,
-  Link as EvergreenLink,
-  Button,
-  Text,
-  Heading,
-  TextInput,
-  TextInputField,
-  Spinner,
-  Alert,
-} from 'evergreen-ui'
+import { Pane, Button, TextInputField, toaster } from 'evergreen-ui'
 
 export default function Account({ session }: { session: AuthSession }) {
   const [loading, setLoading] = useState<boolean>(true)
   const [uploading, setUploading] = useState<boolean>(false)
   const [avatar, setAvatar] = useState<string | null>(null)
   const [username, setUsername] = useState<string | null>(null)
+  const [firstName, setFirstName] = useState<string>('')
+  const [lastName, setLastName] = useState<string>('')
   const [website, setWebsite] = useState<string | null>(null)
+  const usernameInputRef = useRef<HTMLInputElement>(null)
+
+  const handleUsernameChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setUsername(event.target.value)
+  }
+
+  const handleFirstNameChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setFirstName(event.target.value)
+  }
+
+  const handleLastNameChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setLastName(event.target.value)
+  }
+
+  const handleUsernameBlur = (event: ChangeEvent<HTMLInputElement>) => {
+    // create Regex for username
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/
+    const username = event.target.value.trim()
+    if (!usernameRegex.test(username)) {
+      toaster.warning('Tên đăng nhập không hợp lệ', {
+        description: 'Tên đăng nhập phải có ít nhất 3 ký tự, không chứa ký tự đặc biệt và không chứa khoảng trắng',
+      })
+      return
+    }
+    setUsername(username)
+  }
 
   useEffect(() => {
     getProfile()
@@ -73,6 +90,8 @@ export default function Account({ session }: { session: AuthSession }) {
   function setProfile(profile: Profile) {
     setAvatar(profile.avatar_url)
     setUsername(profile.username)
+    setFirstName(profile.first_name)
+    setLastName(profile.last_name)
     setWebsite(profile.website)
   }
 
@@ -83,7 +102,7 @@ export default function Account({ session }: { session: AuthSession }) {
 
       const { data, error } = await supabase
         .from('profiles')
-        .select(`username, website, avatar_url`)
+        .select(`username, first_name, last_name, website, avatar_url`)
         .eq('id', user!.id)
         .single()
 
@@ -107,6 +126,8 @@ export default function Account({ session }: { session: AuthSession }) {
       const updates = {
         id: user!.id,
         username,
+        first_name: firstName,
+        last_name: lastName,
         website,
         updated_at: new Date(),
       }
@@ -119,7 +140,12 @@ export default function Account({ session }: { session: AuthSession }) {
         throw error
       }
     } catch (error) {
-      alert(error.message)
+      if (error.message.includes('profiles_username_key')) {
+        toaster.danger('Tên người dùng đã được sử dụng.', {
+          description: 'Vui lòng chọn tên khác.',
+        })
+        if (usernameInputRef.current) usernameInputRef.current.focus()
+      }
     } finally {
       setLoading(false)
     }
@@ -130,27 +156,49 @@ export default function Account({ session }: { session: AuthSession }) {
       <Pane>
         <Pane display="flex" alignItems="center" marginBottom="20px">
           <Pane marginRight="20px">
-            <UserAvatar url={avatar} size={60} name={username} />
+            <UserAvatar url={avatar} size={60} name={firstName + ' ' + lastName} />
           </Pane>
           <UploadButton onUpload={uploadAvatar} loading={uploading} />
         </Pane>
       </Pane>
       <Pane>
-        <TextInputField label="Email" id="email" type="text" value={session.user.email} disabled />
+        <TextInputField label="Email" id="account-email" type="text" value={session.user.email} disabled />
       </Pane>
       <Pane>
         <TextInputField
-          label="Tên"
-          id="username"
+          label="Username"
+          id="account-username"
           type="text"
+          placeholder="Username"
           value={username || ''}
-          onChange={(e) => setUsername(e.target.value)}
+          ref={usernameInputRef}
+          onChange={handleUsernameChange}
+          onBlur={handleUsernameBlur}
+          hint="Tên đăng nhập phải có ít nhất 3 ký tự, không chứa ký tự đặc biệt và không chứa khoảng trắng"
+        />
+      </Pane>
+      <Pane display="flex" justifyContent="space-between">
+        <TextInputField
+          label="Tên"
+          id="account-first-name"
+          type="text"
+          value={firstName}
+          onChange={handleFirstNameChange}
+          width="40%"
+        />
+        <TextInputField
+          label="Họ"
+          id="account-last-name"
+          type="text"
+          value={lastName}
+          onChange={handleLastNameChange}
+          width="40%"
         />
       </Pane>
       <Pane>
         <TextInputField
           label="Website"
-          id="website"
+          id="account-website"
           type="website"
           value={website || ''}
           onChange={(e) => setWebsite(e.target.value)}

@@ -1,9 +1,8 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import zxcvbn from 'zxcvbn'
 import validator from 'validator'
 import { Pane, toaster, Button, Text, Heading, TextInputField, Checkbox } from 'evergreen-ui'
-import fi from 'date-fns/esm/locale/fi/index.js'
 
 export default function Auth() {
   const [loading, setLoading] = useState<boolean>(false)
@@ -23,7 +22,7 @@ export default function Auth() {
   const handleFirstNameOnBlur = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.trim()
     if (value.length === 0) {
-      toaster.warning('Vui lòng điền vào tên của bạn.', {
+      toaster.danger('Vui lòng điền vào tên của bạn.', {
         id: 'first-name-required',
       })
     }
@@ -38,7 +37,7 @@ export default function Auth() {
     const value = e.target.value.trim()
 
     if (value.length === 0) {
-      toaster.warning('Vui lòng điền vào họ của bạn.', {
+      toaster.danger('Vui lòng điền vào họ của bạn.', {
         id: 'last-name-required',
       })
     }
@@ -52,7 +51,7 @@ export default function Auth() {
 
   const handEmailOnBlur = () => {
     if (!validator.isEmail(email)) {
-      toaster.warning('Vui lòng nhập địa chỉ email hợp lệ', {
+      toaster.danger('Vui lòng nhập địa chỉ email hợp lệ', {
         id: 'invalid-email',
       })
     }
@@ -68,11 +67,9 @@ export default function Auth() {
 
     const zxcvbnResult = zxcvbn(password)
     if (zxcvbnResult.feedback.warning) {
-      toaster.warning(zxcvbnResult.feedback.warning)
-    }
-    if (zxcvbnResult.feedback.suggestions.length > 0) {
-      zxcvbnResult.feedback.suggestions.forEach((element) => {
-        toaster.notify(element)
+      toaster.danger(zxcvbnResult.feedback.warning, {
+        id: 'weak-password',
+        description: zxcvbnResult.feedback.suggestions.join('\n'),
       })
     }
   }
@@ -83,8 +80,8 @@ export default function Auth() {
 
   const handleConfirmPasswordOnBlur = () => {
     if (confirmPassword !== password) {
-      toaster.warning('Mật khẩu nhập lại không khớp', {
-        id: 'password-mismatch',
+      toaster.danger('Mật khẩu nhập lại không khớp', {
+        id: 'sign-up-error',
       })
     }
   }
@@ -92,17 +89,48 @@ export default function Auth() {
   const handleSignUp = async (email: string, password: string) => {
     try {
       setLoading(true)
-      if (email === '' || password === '' || confirmPassword === '') {
-        throw new Error('Email và mật khẩu không được để trống')
-      }
-      if (password !== confirmPassword) {
-        toaster.warning('Mật khẩu nhập lại không khớp', {
-          id: 'password-mismatch',
+      let valid = true
+      if (!validator.isEmail(email)) {
+        toaster.danger('Vui lòng nhập địa chỉ email hợp lệ', {
+          id: 'invalid-email',
         })
-        return
+        valid = false
       }
 
-      const { user, session, error } = await supabase.auth.signUp(
+      if (firstName.length === 0) {
+        toaster.danger('Vui lòng nhập vào tên của bạn.', {
+          id: 'first-name-required',
+        })
+        valid = false
+      }
+
+      if (lastName.length === 0) {
+        toaster.danger('Vui lòng nhập vào họ của bạn.', {
+          id: 'last-name-required',
+        })
+        valid = false
+      }
+
+      if (password !== confirmPassword) {
+        toaster.danger('Mật khẩu nhập lại không khớp', {
+          id: 'sign-up-error',
+        })
+        valid = false
+      }
+
+      const passwordStrength = zxcvbn(password)
+      console.log(passwordStrength)
+      if (passwordStrength.score < 2) {
+        toaster.danger('Mật khẩu của bạn quá yếu', {
+          id: 'weak-password',
+          description: passwordStrength.feedback.warning,
+        })
+        valid = false
+      }
+
+      if (!valid) return
+
+      const { user, error } = await supabase.auth.signUp(
         { email, password },
         {
           data: {
@@ -113,13 +141,15 @@ export default function Auth() {
       )
       if (error) throw error
       toaster.success('Đăng ký thành công!', {
-        id: 'forbidden-action',
+        description: 'Vui lòng kiểm tra hộp thư của bạn để kích hoạt tài khoản.',
+        id: 'sign-up-success',
       })
       console.log(user)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
-      console.log(error.error_description || error.message)
-      toaster.warning(error.message, {
-        id: 'forbidden-action',
+      console.log(error)
+      toaster.danger(error.message, {
+        id: 'sign-up-error',
       })
     } finally {
       setLoading(false)
@@ -130,16 +160,29 @@ export default function Auth() {
     try {
       setLoading(true)
       if (email === '' || password === '') {
-        throw new Error('Bạn cần nhập vào địa chỉ email và mật khẩu.')
+        toaster.danger('Vui lòng nhập địa chỉ email và mật khẩu', {
+          id: 'sign-in-error',
+        })
+        return
       }
-      const { error } = await supabase.auth.signIn({ email, password })
+      const { user, session, error } = await supabase.auth.signIn({ email, password })
       if (error) throw error
-      toaster.success('', {
-        id: 'forbidden-action',
+      toaster.success('Đăng nhập thành công!', {
+        id: 'sign-in-success',
       })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
-      toaster.warning(error_description || error.message, {
-        id: 'forbidden-action',
+      console.log(error)
+      let message = error.error_description || error.message
+      if (error.status === 400 && error.message === 'Email not confirmed') {
+        message = 'Vui lòng kiểm tra hộp thư của bạn để kích hoạt tài khoản.'
+      }
+      if (error.status === 400 && error.message === 'Invalid login credentials') {
+        message = 'Email hoặc mật khẩu không đúng.'
+      }
+      toaster.danger(message, {
+        id: 'sign-in-error',
+        duration: 7,
       })
     } finally {
       setLoading(false)
@@ -158,8 +201,9 @@ export default function Auth() {
       toaster.success('Kiểm tra email của bạn để lấy liên kết!', {
         id: 'send-email',
       })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
-      toaster.warning(error_description || error.message, {
+      toaster.danger(error.error_description || error.message, {
         id: 'send-email',
       })
     } finally {
@@ -188,12 +232,14 @@ export default function Auth() {
               <TextInputField
                 label="Họ"
                 placeholder="Nhập họ"
+                id="auth-first-name"
                 value={lastName}
                 onChange={handleLastNameChange}
                 onBlur={handleLastNameOnBlur}
               />
               <TextInputField
                 label="Tên"
+                id="auth-last-name"
                 placeholder="Nhập tên"
                 value={firstName}
                 onChange={handleFirstNameChange}
@@ -208,6 +254,7 @@ export default function Auth() {
             width="100%"
             value={email}
             type="email"
+            id="auth-email"
             onChange={handleEmailChange}
             onBlur={handEmailOnBlur}
           />
@@ -215,6 +262,7 @@ export default function Auth() {
             <Pane width="100%" position="relative">
               <TextInputField
                 label="Mật khẩu"
+                id="auth-password"
                 placeholder="Mật khẩu"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
@@ -226,6 +274,7 @@ export default function Auth() {
               {isSignUp && (
                 <TextInputField
                   label="Nhập lại mật khẩu"
+                  id="auth-password-confirm"
                   placeholder="Nhập lại mật khẩu"
                   type={showPassword ? 'text' : 'password'}
                   value={confirmPassword}

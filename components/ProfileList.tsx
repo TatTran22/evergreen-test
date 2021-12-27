@@ -61,7 +61,7 @@ export default function ProfileList({ profiles }: ProfileListProps) {
         <Text className="opacity-half font-light m-0">There are no public profiles created yet</Text>
       ) : (
         <Pane>
-          {state.profiles?.map((profile: any) => (
+          {state.profiles?.map((profile: Profile) => (
             <ProfileCard profile={profile} key={profile.id} />
           ))}
         </Pane>
