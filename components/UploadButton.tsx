@@ -1,17 +1,4 @@
-import { ChangeEventHandler } from 'react'
-import {
-  Pane,
-  majorScale,
-  Link as EvergreenLink,
-  Button,
-  Text,
-  FilePicker,
-  TextInput,
-  TextInputField,
-  Spinner,
-  Alert,
-  File,
-} from 'evergreen-ui'
+import { Pane, FilePicker } from 'evergreen-ui'
 
 export type UploadButtonProps = {
   onUpload: FileList

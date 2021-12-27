@@ -20,12 +20,12 @@ function MyApp({ Component, pageProps }: AppProps) {
     console.log('time remaining', await getRemainingTime())
   }
 
-  const handleOnAction = (event) => {
+  const handleOnAction = (event: Event) => {
     // console.log('user did something', event)
   }
 
   const { getRemainingTime, getLastActiveTime } = useIdleTimer({
-    timeout: 1000 * 60,
+    timeout: 1000 * 60 * 5,
     onIdle: handleOnIdle,
     onActive: handleOnActive,
     onAction: handleOnAction,
@@ -35,6 +35,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   async function updateStatus() {
     try {
       const user = supabase.auth.user()
+      if (user === null) return
 
       const updates = {
         id: user!.id,

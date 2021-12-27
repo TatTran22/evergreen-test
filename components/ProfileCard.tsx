@@ -12,7 +12,7 @@ import {
   Button,
   Text,
   Heading,
-  TextInput,
+  Card,
   Nudge,
   Position,
   StatusIndicator,
@@ -26,30 +26,48 @@ export default function ProfileCard({ profile }: { profile: Profile }) {
   const parentPath = pathname.split('/')[1]
 
   return (
-    <Pane borderRadius="5px" display="flex" marginBottom="20px" padding="20px" alignItems="center">
-      <UserAvatar url={profile.avatar_url} size={100} name={profile.username} />
-      <Pane display="flex" flexDirection="column" alignItems="center">
-        <Text fontSize="1.3rem" fontWeight="500" marginBottom="5px" position="relative">
-          <Pane position="absolute" left="-20px">
-            <StatusIndicator color={profile.active_status ? 'success' : 'disabled'} dotSize={12} />
+    <Card
+      borderRadius="1rem"
+      display="flex"
+      marginBottom="20px"
+      padding="20px"
+      alignItems="center"
+      backgroundColor="#EBF0FF"
+      position="relative"
+      height="100%"
+    >
+      <Pane position="relative">
+        <UserAvatar url={profile.avatar_url} size={88} name={profile.username} />
+        <Pane position="absolute" right="0" bottom="0">
+          <Pane position="relative" display="flex" justifyContent="center" alignItems="center">
+            <StatusIndicator color="white" dotSize={30} position="absolute" />
+            <StatusIndicator color={profile.active_status ? 'success' : 'disabled'} dotSize={22} position="relative" />
           </Pane>
+        </Pane>
+      </Pane>
+      <Pane
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        marginLeft="1rem"
+        justifyContent="space-around"
+        flexGrow={1}
+      >
+        <Heading is="h2" fontSize="1.3rem" fontWeight="500" marginBottom="1rem">
           {profile.username}
-        </Text>
-        <Text fontSize="0.7em">{profile.active_status ? 'Đang hoạt động' : `Hoạt động lần cuối ${lastActive}`}</Text>
-
-        <Link href={profile.website} passHref>
-          <EvergreenLink target="_blank" fontSize="0.9rem" color={parentPath !== 'resources' ? 'neutral' : undefined}>
-            {profile.website}
-          </EvergreenLink>
-        </Link>
+        </Heading>
+        {/* <Text fontSize="0.7em">{profile.active_status ? 'Đang hoạt động' : `Hoạt động lần cuối ${lastActive}`}</Text> */}
+        <Pane>
+          <Link href={profile.website} passHref>
+            <EvergreenLink target="_blank" fontSize="0.9rem" color={parentPath !== 'resources' ? 'neutral' : undefined}>
+              {profile.website}
+            </EvergreenLink>
+          </Link>
+        </Pane>
         <Text>
-          <Pane is="small">
-            Cập nhật lần cuối{' '}
-            {lastUpdated ? `${lastUpdated.toLocaleDateString()} ${lastUpdated.toLocaleTimeString()}` : 'Never'}
-          </Pane>
+          <Pane is="small">Hoạt động gần nhất {lastActive}</Pane>
         </Text>
       </Pane>
-      <Pane />
-    </Pane>
+    </Card>
   )
 }

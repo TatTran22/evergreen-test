@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { DEFAULT_AVATARS_BUCKET } from '../lib/constants'
-import { Pane, majorScale, Avatar, Button, Text, Heading } from 'evergreen-ui'
+import { Avatar, toaster } from 'evergreen-ui'
 
 export default function UserAvatar({ url, size, name }: { url: string | null; size: number; name: string | null }) {
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     if (url) downloadImage(url)
@@ -16,12 +16,17 @@ export default function UserAvatar({ url, size, name }: { url: string | null; si
       if (error) {
         throw error
       }
+      if (!data) {
+        throw 'Không tìm thấy ảnh'
+      }
       const url = URL.createObjectURL(data)
       setAvatarUrl(url)
-    } catch (error) {
-      console.log('Error downloading image: ', error.message)
+    } catch (error: any) {
+      toaster.warning(error.message, {
+        id: 'image-download-error',
+      })
     }
   }
 
-  return <Avatar src={avatarUrl} name={name ?? 'Jesse Tran'} size={size} />
+  return <Avatar src={avatarUrl} name={name} size={size} />
 }
