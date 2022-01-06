@@ -1,23 +1,28 @@
 import React, { useEffect, useState, createContext, useContext } from 'react'
+import { Session, User } from '@supabase/supabase-js'
+import { supabase } from '../lib/supabaseClient'
 
-const UserContext = createContext({ user: null, session: null })
+export const UserContext = createContext<{ user: User | null; session: Session | null }>({
+  user: null,
+  session: null,
+})
 
-export const UserContextProvider = (props) => {
-  const { supabaseClient } = props
-  const [session, setSession] = useState(null)
-  const [user, setUser] = useState(null)
+export const UserContextProvider = (props: any) => {
+  const [session, setSession] = useState<Session | null>(null)
+  const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
-    const session = supabaseClient.auth.session()
+    const session = supabase.auth.session()
     setSession(session)
     setUser(session?.user ?? null)
-    const { data: authListener } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log(`Supabase auth event: ${event}`)
       setSession(session)
       setUser(session?.user ?? null)
     })
 
     return () => {
-      authListener.unsubscribe()
+      authListener!.unsubscribe()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

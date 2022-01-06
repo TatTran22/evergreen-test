@@ -1,27 +1,19 @@
 import Auth from '../components/Auth'
 import Account from '../components/Account'
-import React, { useState, useEffect, useContext, createContext } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useUser } from '~/lib/UserContext'
 import { supabase } from '../lib/supabaseClient'
-import { AuthSession } from '@supabase/supabase-js'
 import { Profile } from '../lib/constants'
 import ProfileList from '../components/ProfileList'
-import { Pane, Tablist, Button, Text, Heading, TextInput, Spinner, Tab, Paragraph, majorScale } from 'evergreen-ui'
+import { Pane, Tablist, Heading, Tab, toaster } from 'evergreen-ui'
 
 import Layout from '../components/document/Layout'
 
 const IndexPage = () => {
-  const [session, setSession] = useState<AuthSession | null>(null)
+  const { user, session } = useUser()
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [tabs] = useState(['Thông tin tài khoản', 'Đổi mật khẩu', 'Cộng đồng'])
-
-  useEffect(() => {
-    setSession(supabase.auth.session())
-
-    supabase.auth.onAuthStateChange((_event: string, session: AuthSession | null) => {
-      setSession(session)
-    })
-  }, [])
 
   useEffect(() => {
     getPublicProfiles()
@@ -37,10 +29,12 @@ const IndexPage = () => {
       if (error || !data) {
         throw error || new Error('No data')
       }
-      console.log('Public profiles:', data)
       setProfiles(data)
-    } catch (error) {
-      console.log('error', error.message)
+    } catch (error: any) {
+      toaster.warning(error.message, {
+        id: 'get-profiles-error',
+      })
+      console.error(error)
     }
   }
 

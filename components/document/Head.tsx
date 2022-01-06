@@ -9,8 +9,7 @@ const absolutePath = (path?: string) => {
   return `https://evergreen.segment.com${path || ''}`
 }
 
-const description =
-  'Evergreen is a React UI Framework for building ambitious products on the web. Made by Segment in San Francisco, CA.'
+const description = 'Đây là một dự án cá nhân nhằm mục đích quản lý chi tiêu của bản thân.'
 
 const DocumentHead: React.FC<Props> = ({ title }) => {
   return (

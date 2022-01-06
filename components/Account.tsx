@@ -4,17 +4,31 @@ import UploadButton from '../components/UploadButton'
 import UserAvatar from './UserAvatar'
 import { AuthSession } from '@supabase/supabase-js'
 import { DEFAULT_AVATARS_BUCKET, Profile } from '../lib/constants'
+import { validateUsername } from '../lib/validateInput'
 import { Pane, Button, TextInputField, toaster } from 'evergreen-ui'
 
 export default function Account({ session }: { session: AuthSession }) {
   const [loading, setLoading] = useState<boolean>(true)
   const [uploading, setUploading] = useState<boolean>(false)
   const [avatar, setAvatar] = useState<string | null>(null)
-  const [username, setUsername] = useState<string | null>(null)
+  const [email, setEmail] = useState<string>('')
+  const [username, setUsername] = useState<string>('')
   const [firstName, setFirstName] = useState<string>('')
   const [lastName, setLastName] = useState<string>('')
   const [website, setWebsite] = useState<string | null>(null)
   const usernameInputRef = useRef<HTMLInputElement>(null)
+
+  const handleEmailChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setEmail(event.target.value)
+  }
+
+  const handleEmailBlur = () => {
+    toaster.warning('Địa chỉ email không thể thay đổi.', {
+      id: 'email-cannot-change',
+    })
+
+    setEmail(session.user.email)
+  }
 
   const handleUsernameChange = (event: ChangeEvent<HTMLInputElement>) => {
     setUsername(event.target.value)
@@ -29,16 +43,15 @@ export default function Account({ session }: { session: AuthSession }) {
   }
 
   const handleUsernameBlur = (event: ChangeEvent<HTMLInputElement>) => {
-    // create Regex for username
-    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/
-    const username = event.target.value.trim()
-    if (!usernameRegex.test(username)) {
-      toaster.warning('Tên đăng nhập không hợp lệ', {
-        description: 'Tên đăng nhập phải có ít nhất 3 ký tự, không chứa ký tự đặc biệt và không chứa khoảng trắng',
+    const { value } = event.target
+    const validateResult = validateUsername(value)
+
+    if (!validateResult.isValid) {
+      toaster.warning(validateResult.errorMessage, {
+        id: 'username-invalid',
+        description: validateResult.suggestions && validateResult.suggestions.join('\n'),
       })
-      return
     }
-    setUsername(username)
   }
 
   useEffect(() => {
@@ -47,7 +60,15 @@ export default function Account({ session }: { session: AuthSession }) {
 
   async function signOut() {
     const { error } = await supabase.auth.signOut()
-    if (error) console.log('Error logging out:', error.message)
+    if (error) {
+      toaster.warning('Đăng xuất không thành công', {
+        id: 'sign-out-error',
+      })
+      console.log('Error logging out:', error.message)
+    }
+    toaster.success('Đăng xuất thành công!', {
+      id: 'sign-out-success',
+    })
   }
 
   async function uploadAvatar(event: FileList) {
@@ -81,6 +102,7 @@ export default function Account({ session }: { session: AuthSession }) {
       setAvatar(null)
       setAvatar(filePath)
     } catch (error) {
+      console.log('Error uploading avatar:', error)
       alert(error.message)
     } finally {
       setUploading(false)
@@ -88,6 +110,7 @@ export default function Account({ session }: { session: AuthSession }) {
   }
 
   function setProfile(profile: Profile) {
+    setEmail(session.user.email)
     setAvatar(profile.avatar_url)
     setUsername(profile.username)
     setFirstName(profile.first_name)
@@ -112,7 +135,7 @@ export default function Account({ session }: { session: AuthSession }) {
 
       setProfile(data)
     } catch (error) {
-      console.log('error', error.message)
+      console.log('Error getting profile:', error)
     } finally {
       setLoading(false)
     }
@@ -122,6 +145,14 @@ export default function Account({ session }: { session: AuthSession }) {
     try {
       setLoading(true)
       const user = supabase.auth.user()
+
+      if (!user) {
+        throw new Error('Người dùng không tồn tại')
+      }
+
+      if (!validateUsername(username)) {
+        throw new Error('Tên người dùng không hợp lệ')
+      }
 
       const updates = {
         id: user!.id,
@@ -139,13 +170,22 @@ export default function Account({ session }: { session: AuthSession }) {
       if (error) {
         throw error
       }
-    } catch (error) {
+      toaster.success('Cập nhật thành công!', {
+        id: 'profile-update-success',
+      })
+    } catch (error: any) {
+      console.log('Error updating profile:', error)
       if (error.message.includes('profiles_username_key')) {
         toaster.danger('Tên người dùng đã được sử dụng.', {
+          id: 'profile-update-fail',
           description: 'Vui lòng chọn tên khác.',
         })
         if (usernameInputRef.current) usernameInputRef.current.focus()
       }
+      toaster.danger('Cập nhật thất bại!', {
+        id: 'profile-update-fail',
+        description: error.message || error.description || '',
+      })
     } finally {
       setLoading(false)
     }
@@ -162,7 +202,16 @@ export default function Account({ session }: { session: AuthSession }) {
         </Pane>
       </Pane>
       <Pane>
-        <TextInputField label="Email" id="account-email" type="text" value={session.user.email} disabled />
+        <TextInputField
+          label="Email"
+          id="account-email"
+          type="text"
+          placeholder="Email"
+          value={email || ''}
+          onChange={handleEmailChange}
+          onBlur={handleEmailBlur}
+          disabled
+        />
       </Pane>
       <Pane>
         <TextInputField
@@ -182,7 +231,8 @@ export default function Account({ session }: { session: AuthSession }) {
           label="Tên"
           id="account-first-name"
           type="text"
-          value={firstName}
+          placeholder="Tên"
+          value={firstName || ''}
           onChange={handleFirstNameChange}
           width="40%"
         />
@@ -190,7 +240,8 @@ export default function Account({ session }: { session: AuthSession }) {
           label="Họ"
           id="account-last-name"
           type="text"
-          value={lastName}
+          placeholder="Họ"
+          value={lastName || ''}
           onChange={handleLastNameChange}
           width="40%"
         />
@@ -200,6 +251,7 @@ export default function Account({ session }: { session: AuthSession }) {
           label="Website"
           id="account-website"
           type="website"
+          placeholder="Website"
           value={website || ''}
           onChange={(e) => setWebsite(e.target.value)}
         />

@@ -147,7 +147,7 @@ export default function Auth() {
       console.log(user)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
-      console.log(error)
+      console.log('Error signing up:', error)
       toaster.danger(error.message, {
         id: 'sign-up-error',
       })
@@ -172,7 +172,7 @@ export default function Auth() {
       })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
-      console.log(error)
+      console.log('Error signing in:', error)
       let message = error.error_description || error.message
       if (error.status === 400 && error.message === 'Email not confirmed') {
         message = 'Vui lòng kiểm tra hộp thư của bạn để kích hoạt tài khoản.'
@@ -203,6 +203,7 @@ export default function Auth() {
       })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
+      console.log('Error sending email:', error)
       toaster.danger(error.error_description || error.message, {
         id: 'send-email',
       })

@@ -22,6 +22,7 @@ export default function UserAvatar({ url, size, name }: { url: string | null; si
       const url = URL.createObjectURL(data)
       setAvatarUrl(url)
     } catch (error: any) {
+      console.log('Error downloading image:', error)
       toaster.warning(error.message, {
         id: 'image-download-error',
       })

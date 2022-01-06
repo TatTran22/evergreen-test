@@ -3,7 +3,8 @@ import { AppProps } from 'next/app'
 import '../styles/index.css'
 import { useIdleTimer } from 'react-idle-timer'
 import { supabase } from '../lib/supabaseClient'
-import { Pane, Tablist, toaster, Button, Text, Heading, TextInput, Spinner, Alert, Paragraph } from 'evergreen-ui'
+import { toaster } from 'evergreen-ui'
+import { UserContextProvider } from '../lib/UserContext'
 
 function MyApp({ Component, pageProps }: AppProps) {
   const [status, setStatus] = useState<boolean>(true)
@@ -50,20 +51,36 @@ function MyApp({ Component, pageProps }: AppProps) {
       if (error) {
         throw error
       }
-    } catch (error) {
+    } catch (error: any) {
       toaster.warning(error.message, {
         id: 'forbidden-action',
       })
+      console.log('error', error)
     }
   }
 
+  // update status on page load and when status changes
   useEffect(() => {
     updateStatus()
   }, [status])
+
+  // set status to false on page unload
+  useEffect(() => {
+    window.addEventListener('beforeunload', () => {
+      setStatus(false)
+    })
+
+    return () => {
+      window.removeEventListener('beforeunload', () => {
+        setStatus(false)
+      })
+    }
+  }, [])
+
   return (
-    <>
+    <UserContextProvider>
       <Component {...pageProps} />
-    </>
+    </UserContextProvider>
   )
 }
 
