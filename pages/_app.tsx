@@ -4,7 +4,7 @@ import '../styles/index.css'
 import { useIdleTimer } from 'react-idle-timer'
 import { supabase } from '../lib/supabaseClient'
 import { toaster } from 'evergreen-ui'
-import { UserContextProvider } from '../lib/UserContext'
+import { UserContextProvider } from '../components/UserContext'
 
 function MyApp({ Component, pageProps }: AppProps) {
   const [status, setStatus] = useState<boolean>(true)

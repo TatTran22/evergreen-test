@@ -7,6 +7,7 @@ export const UserContext = createContext<{ user: User | null; session: Session |
   session: null,
 })
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const UserContextProvider = (props: any) => {
   const [session, setSession] = useState<Session | null>(null)
   const [user, setUser] = useState<User | null>(null)
@@ -22,7 +23,7 @@ export const UserContextProvider = (props: any) => {
     })
 
     return () => {
-      authListener!.unsubscribe()
+      authListener?.unsubscribe()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

@@ -11,7 +11,7 @@ export default function Account({ session }: { session: AuthSession }) {
   const [loading, setLoading] = useState<boolean>(true)
   const [uploading, setUploading] = useState<boolean>(false)
   const [avatar, setAvatar] = useState<string | null>(null)
-  const [email, setEmail] = useState<string>('')
+  const [email, setEmail] = useState<string | undefined>(undefined)
   const [username, setUsername] = useState<string>('')
   const [firstName, setFirstName] = useState<string>('')
   const [lastName, setLastName] = useState<string>('')
@@ -81,7 +81,7 @@ export default function Account({ session }: { session: AuthSession }) {
       const user = supabase.auth.user()
       const file = event[0]
       const fileExt = file.name.split('.').pop()
-      const fileName = `${session?.user.id}${Math.random()}.${fileExt}`
+      const fileName = `${session?.user?.id}${Math.random()}.${fileExt}`
       const filePath = `${fileName}`
 
       const { error: uploadError } = await supabase.storage.from(DEFAULT_AVATARS_BUCKET).upload(filePath, file)

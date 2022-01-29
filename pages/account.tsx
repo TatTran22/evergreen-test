@@ -1,7 +1,7 @@
 import Auth from '../components/Auth'
 import Account from '../components/Account'
 import React, { useState, useEffect } from 'react'
-import { useUser } from '~/lib/UserContext'
+import { useUser } from '~/components/UserContext'
 import { supabase } from '../lib/supabaseClient'
 import { Profile } from '../lib/constants'
 import ProfileList from '../components/ProfileList'
@@ -9,8 +9,10 @@ import { Pane, Tablist, Heading, Tab, toaster } from 'evergreen-ui'
 
 import Layout from '../components/document/Layout'
 
-const IndexPage = () => {
-  const { user, session } = useUser()
+interface Props {}
+
+const MyAccount: React.FC<Props> = () => {
+  const { session } = useUser()
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [tabs] = useState(['Thông tin tài khoản', 'Đổi mật khẩu', 'Cộng đồng'])
@@ -65,8 +67,8 @@ const IndexPage = () => {
             <Pane padding={16} background="tint1" flex="1">
               {tabs.map((tab, index) => (
                 <Pane
-                  key={tab}
-                  id={`panel-${tab}`}
+                  key={`panel-${index}`}
+                  id={`panel-${index}`}
                   role="tabpanel"
                   aria-labelledby={tab}
                   aria-hidden={index !== selectedIndex}
@@ -77,7 +79,7 @@ const IndexPage = () => {
                       {tab}
                     </Heading>
                     {!index ? (
-                      <Account key={session.user.id} session={session} />
+                      <Account key={session?.user?.id} session={session} />
                     ) : (
                       <Pane display="flex" flexDirection="column" gap="20" width="100%">
                         {index == 1 ? <Pane>Đang phát triển...</Pane> : <ProfileList profiles={profiles} />}
@@ -94,4 +96,4 @@ const IndexPage = () => {
   )
 }
 
-export default IndexPage
+export default MyAccount

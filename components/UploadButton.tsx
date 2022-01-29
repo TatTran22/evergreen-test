@@ -1,7 +1,7 @@
 import { Pane, FilePicker } from 'evergreen-ui'
 
 export type UploadButtonProps = {
-  onUpload: FileList
+  onUpload: (file: FileList) => void
   loading: boolean
 }
 
